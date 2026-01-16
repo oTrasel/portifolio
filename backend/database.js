@@ -32,6 +32,7 @@ function initializeDatabase() {
         name TEXT NOT NULL,
         title TEXT NOT NULL,
         description TEXT NOT NULL,
+        photo_url TEXT,
         updated_at DATETIME DEFAULT CURRENT_TIMESTAMP
       )
     `);

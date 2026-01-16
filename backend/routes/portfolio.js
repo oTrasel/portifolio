@@ -1,7 +1,46 @@
 const express = require('express');
 const router = express.Router();
+const multer = require('multer');
+const path = require('path');
+const fs = require('fs');
 const db = require('../database');
 const { verifyToken } = require('./auth');
+
+// Configurar pasta de uploads
+const uploadDir = path.join(__dirname, '../uploads');
+if (!fs.existsSync(uploadDir)) {
+  fs.mkdirSync(uploadDir, { recursive: true });
+}
+
+// Configurar multer para upload de imagens
+const storage = multer.diskStorage({
+  destination: function (req, file, cb) {
+    console.log('📁 Salvando arquivo em:', uploadDir);
+    cb(null, uploadDir);
+  },
+  filename: function (req, file, cb) {
+    const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1E9);
+    const filename = 'hero-' + uniqueSuffix + path.extname(file.originalname);
+    console.log('📝 Nome do arquivo:', filename);
+    cb(null, filename);
+  }
+});
+
+const upload = multer({
+  storage: storage,
+  limits: { fileSize: 5 * 1024 * 1024 }, // 5MB
+  fileFilter: function (req, file, cb) {
+    const allowedTypes = /jpeg|jpg|png|gif|webp/;
+    const extname = allowedTypes.test(path.extname(file.originalname).toLowerCase());
+    const mimetype = allowedTypes.test(file.mimetype);
+    
+    if (mimetype && extname) {
+      return cb(null, true);
+    } else {
+      cb(new Error('Apenas imagens são permitidas!'));
+    }
+  }
+});
 
 // Middleware para verificar se admin está habilitado em rotas de escrita
 const checkAdminEnabled = (req, res, next) => {
@@ -23,16 +62,77 @@ router.get('/hero', (req, res) => {
 });
 
 router.put('/hero', verifyToken, (req, res) => {
-  const { name, title, description } = req.body;
+  const { name, title, description, photo_url } = req.body;
   
   db.run(
-    'UPDATE hero SET name = ?, title = ?, description = ?, updated_at = CURRENT_TIMESTAMP WHERE id = 1',
-    [name, title, description],
+    'INSERT OR REPLACE INTO hero (id, name, title, description, photo_url, updated_at) VALUES (1, ?, ?, ?, ?, CURRENT_TIMESTAMP)',
+    [name, title, description, photo_url],
     function(err) {
       if (err) return res.status(500).json({ error: err.message });
       res.json({ success: true, changes: this.changes });
     }
   );
+});
+
+// Rota de upload de foto do hero
+router.post('/hero/upload-photo', verifyToken, upload.single('photo'), (req, res) => {
+  console.log('📸 Requisição de upload recebida');
+  console.log('📦 Arquivo:', req.file);
+  
+  try {
+    if (!req.file) {
+      console.log('❌ Nenhum arquivo no request');
+      return res.status(400).json({ error: 'Nenhum arquivo enviado' });
+    }
+
+    const photoUrl = `/uploads/${req.file.filename}`;
+    console.log('✅ Arquivo salvo:', photoUrl);
+    
+    // Buscar foto antiga para deletar
+    db.get('SELECT photo_url FROM hero WHERE id = 1', [], (err, row) => {
+      if (!err && row && row.photo_url) {
+        const oldPhotoPath = path.join(__dirname, '..', row.photo_url);
+        console.log('🗑️ Deletando foto antiga:', oldPhotoPath);
+        if (fs.existsSync(oldPhotoPath)) {
+          fs.unlinkSync(oldPhotoPath);
+        }
+      }
+      
+      // Atualizar com a nova foto
+      db.run(
+        'UPDATE hero SET photo_url = ?, updated_at = CURRENT_TIMESTAMP WHERE id = 1',
+        [photoUrl],
+        function(err) {
+          if (err) {
+            console.error('❌ Erro ao atualizar banco:', err.message);
+            return res.status(500).json({ error: err.message });
+          }
+          
+          // Se não afetou nenhuma linha, inserir
+          if (this.changes === 0) {
+            db.run(
+              'INSERT INTO hero (id, name, title, description, photo_url) VALUES (1, ?, ?, ?, ?)',
+              ['Seu Nome', 'Seu Título', 'Sua descrição', photoUrl],
+              function(err) {
+                if (err) {
+                  console.error('❌ Erro ao inserir no banco:', err.message);
+                  return res.status(500).json({ error: err.message });
+                }
+                console.log('✅ Hero criado com photo_url:', photoUrl);
+                res.json({ success: true, photo_url: photoUrl });
+              }
+            );
+          } else {
+            console.log('✅ Banco atualizado com photo_url:', photoUrl);
+            res.json({ success: true, photo_url: photoUrl });
+          }
+        }
+      );
+    });
+  } catch (error) {
+    console.error('❌ Erro no upload:', error);
+    res.status(500).json({ error: error.message });
+  }
 });
 
 // ========== ABOUT ==========
@@ -55,13 +155,54 @@ router.put('/about', verifyToken, (req, res) => {
   const { intro, description, email, location } = req.body;
   
   db.run(
-    'UPDATE about SET intro = ?, description = ?, email = ?, location = ?, updated_at = CURRENT_TIMESTAMP WHERE id = 1',
+    'INSERT OR REPLACE INTO about (id, intro, description, email, location, updated_at) VALUES (1, ?, ?, ?, ?, CURRENT_TIMESTAMP)',
     [intro, description, email, location],
     function(err) {
       if (err) return res.status(500).json({ error: err.message });
       res.json({ success: true, changes: this.changes });
     }
   );
+});
+
+// ========== ABOUT STATS ==========
+router.post('/about/stats', verifyToken, (req, res) => {
+  const { icon, value, label } = req.body;
+  
+  // Primeiro pegar o próximo display_order
+  db.get('SELECT COALESCE(MAX(display_order), 0) + 1 as next_order FROM about_stats', [], (err, row) => {
+    if (err) return res.status(500).json({ error: err.message });
+    
+    const nextOrder = row.next_order;
+    
+    db.run(
+      'INSERT INTO about_stats (icon, number, label, display_order) VALUES (?, ?, ?, ?)',
+      [icon, value, label, nextOrder],
+      function(err) {
+        if (err) return res.status(500).json({ error: err.message });
+        res.json({ success: true, id: this.lastID });
+      }
+    );
+  });
+});
+
+router.put('/about/stats/:id', verifyToken, (req, res) => {
+  const { icon, value, label } = req.body;
+  
+  db.run(
+    'UPDATE about_stats SET icon = ?, number = ?, label = ? WHERE id = ?',
+    [icon, value, label, req.params.id],
+    function(err) {
+      if (err) return res.status(500).json({ error: err.message });
+      res.json({ success: true, changes: this.changes });
+    }
+  );
+});
+
+router.delete('/about/stats/:id', verifyToken, (req, res) => {
+  db.run('DELETE FROM about_stats WHERE id = ?', [req.params.id], function(err) {
+    if (err) return res.status(500).json({ error: err.message });
+    res.json({ success: true, changes: this.changes });
+  });
 });
 
 // ========== EXPERIENCES ==========

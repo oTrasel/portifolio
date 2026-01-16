@@ -1,6 +1,7 @@
 const express = require('express');
 const cors = require('cors');
 const dotenv = require('dotenv');
+const path = require('path');
 const rateLimit = require('express-rate-limit');
 const authRoutes = require('./routes/auth');
 const portfolioRoutes = require('./routes/portfolio');
@@ -30,6 +31,9 @@ const limiter = rateLimit({
 app.use(cors(corsOptions));
 app.use(express.json({ limit: '10mb' })); // Limite de tamanho do payload
 app.use(limiter);
+
+// Servir arquivos estáticos da pasta uploads
+app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
 
 // Rotas
 app.use('/api/auth', authRoutes);

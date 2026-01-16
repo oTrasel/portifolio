@@ -22,7 +22,10 @@
       
       <div class="hero-image fade-in-up">
         <div class="image-wrapper">
-          <div class="image-placeholder">
+          <div v-if="hero.photo_url" class="hero-photo">
+            <img :src="hero.photo_url" :alt="hero.name" @error="handleImageError" />
+          </div>
+          <div v-else class="image-placeholder">
             <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor">
               <path d="M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z"/>
             </svg>
@@ -40,7 +43,7 @@
 </template>
 
 <script>
-import { computed } from 'vue'
+import { computed, watch } from 'vue'
 import { usePortfolioStore } from '../stores/portfolio'
 
 export default {
@@ -49,8 +52,20 @@ export default {
     const portfolioStore = usePortfolioStore()
     const hero = computed(() => portfolioStore.hero)
     
+    // Log para debug
+    watch(() => portfolioStore.hero.photo_url, (newValue) => {
+      console.log('🖼️ Hero photo_url atualizado:', newValue)
+      console.log('🖼️ URL completa da imagem:', window.location.origin + newValue)
+    }, { immediate: true })
+    
+    const handleImageError = (e) => {
+      console.error('❌ Erro ao carregar imagem:', e.target.src)
+      console.error('❌ Caminho esperado:', portfolioStore.hero.photo_url)
+    }
+    
     return {
-      hero
+      hero,
+      handleImageError
     }
   }
 }
@@ -176,6 +191,22 @@ export default {
   align-items: center;
 }
 
+.hero-photo {
+  width: 350px;
+  height: 350px;
+  border-radius: 50%;
+  overflow: hidden;
+  box-shadow: 0 20px 60px rgba(99, 102, 241, 0.4);
+  border: 5px solid var(--primary-color);
+  animation: float 6s ease-in-out infinite;
+}
+
+.hero-photo img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
 .image-placeholder {
   width: 350px;
   height: 350px;
@@ -275,6 +306,7 @@ export default {
     justify-content: center;
   }
 
+  .hero-photo,
   .image-placeholder {
     width: 280px;
     height: 280px;
@@ -299,6 +331,7 @@ export default {
     font-size: 1rem;
   }
 
+  .hero-photo,
   .image-placeholder {
     width: 220px;
     height: 220px;

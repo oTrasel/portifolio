@@ -124,6 +124,60 @@
               >
             </div>
             
+            <div class="form-section-header">
+              <h3>Estatísticas</h3>
+              <button type="button" @click="addStat" class="btn btn-outline btn-sm">
+                ➕ Adicionar Estatística
+              </button>
+            </div>
+            
+            <div class="stats-list">
+              <div 
+                v-for="(stat, index) in stats" 
+                :key="stat.id || index"
+                class="stat-item"
+              >
+                <div class="stat-fields">
+                  <div class="form-group">
+                    <label>Ícone (emoji)</label>
+                    <input
+                      type="text"
+                      v-model="stat.icon"
+                      placeholder="💼"
+                      maxlength="2"
+                    >
+                  </div>
+                  
+                  <div class="form-group">
+                    <label>Valor</label>
+                    <input
+                      type="text"
+                      v-model="stat.number"
+                      placeholder="4+"
+                    >
+                  </div>
+                  
+                  <div class="form-group">
+                    <label>Descrição</label>
+                    <input
+                      type="text"
+                      v-model="stat.label"
+                      placeholder="Anos de Experiência"
+                    >
+                  </div>
+                </div>
+                
+                <button 
+                  type="button" 
+                  @click="removeStat(index)" 
+                  class="btn-delete"
+                  title="Remover estatística"
+                >
+                  🗑️
+                </button>
+              </div>
+            </div>
+            
             <div class="form-actions">
               <button type="submit" class="btn btn-primary">
                 💾 Salvar Alterações
@@ -160,29 +214,121 @@ export default {
       intro: '',
       description: '',
       email: '',
-      location: ''
+      location: '',
+      photo_url: ''
     })
     
+    const stats = ref([])
+    const statsToDelete = ref([])
     const saved = ref(false)
+    const photoPreview = ref('')
+    const selectedPhotoFile = ref(null)
     
     onMounted(() => {
-      form.value = { ...portfolioStore.about }
+      form.value = {
+        intro: portfolioStore.about.intro,
+        description: portfolioStore.about.description,
+        email: portfolioStore.about.email,
+        location: portfolioStore.about.location,
+        photo_url: portfolioStore.about.photo_url
+      }
+      stats.value = [...portfolioStore.about.stats]
     })
     
+    const handlePhotoSelect = (event) => {
+      const file = event.target.files[0]
+      if (file) {
+        selectedPhotoFile.value = file
+        const reader = new FileReader()
+        reader.onload = (e) => {
+          photoPreview.value = e.target.result
+        }
+        reader.readAsDataURL(file)
+      }
+    }
+    
+    const removePhoto = () => {
+      photoPreview.value = ''
+      selectedPhotoFile.value = null
+      form.value.photo_url = ''
+    }
+    
+    const addStat = () => {
+      stats.value.push({
+        icon: '',
+        number: '',
+        label: '',
+        isNew: true
+      })
+    }
+    
+    const removeStat = async (index) => {
+      const stat = stats.value[index]
+      if (stat.id) {
+        // Se tem ID, é uma stat existente - adicionar à lista de deleção
+        statsToDelete.value.push(stat.id)
+      }
+      stats.value.splice(index, 1)
+    }
+    
     const handleSave = async () => {
-      const success = await portfolioStore.updateAbout(form.value)
-      if (success) {
+      try {
+        // Salvar informações básicas do about
+        const basicSuccess = await portfolioStore.updateAbout(form.value)
+        
+        if (!basicSuccess) {
+          alert('Erro ao salvar dados básicos')
+          return
+        }
+        
+        // Deletar stats marcadas para deleção
+        for (const statId of statsToDelete.value) {
+          await portfolioStore.deleteAboutStat(statId)
+        }
+        statsToDelete.value = []
+        
+        // Atualizar ou criar stats
+        for (const stat of stats.value) {
+          if (stat.isNew) {
+            // Nova stat
+            await portfolioStore.addAboutStat({
+              icon: stat.icon,
+              value: stat.number,
+              label: stat.label
+            })
+          } else if (stat.id) {
+            // Stat existente
+            await portfolioStore.updateAboutStat(stat.id, {
+              icon: stat.icon,
+              value: stat.number,
+              label: stat.label
+            })
+          }
+        }
+        
+        // Recarregar dados
+        await portfolioStore.fetchAbout()
+        stats.value = [...portfolioStore.about.stats]
+        
         saved.value = true
         setTimeout(() => {
           saved.value = false
         }, 3000)
-      } else {
-        alert('Erro ao salvar dados')
+      } catch (error) {
+        console.error('Erro ao salvar:', error)
+        alert('Erro ao salvar alterações')
       }
     }
     
     const handleReset = () => {
-      form.value = { ...portfolioStore.about }
+      form.value = {
+        intro: portfolioStore.about.intro,
+        description: portfolioStore.about.description,
+        email: portfolioStore.about.email,
+        location: portfolioStore.about.location
+      }
+      stats.value = [...portfolioStore.about.stats]
+      statsToDelete.value = []
     }
     
     const handleLogout = () => {
@@ -192,7 +338,10 @@ export default {
     
     return {
       form,
+      stats,
       saved,
+      addStat,
+      removeStat,
       handleSave,
       handleReset,
       handleLogout

@@ -68,13 +68,15 @@ export default {
     const password = ref('')
     const error = ref('')
     
-    const handleLogin = () => {
+    const handleLogin = async () => {
       error.value = ''
       
-      if (authStore.login(username.value, password.value)) {
+      const result = await authStore.login(username.value, password.value)
+      
+      if (result.success) {
         router.push('/admin')
       } else {
-        error.value = 'Usuário ou senha incorretos'
+        error.value = result.error || 'Usuário ou senha incorretos'
       }
     }
     

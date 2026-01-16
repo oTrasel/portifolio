@@ -6,7 +6,8 @@ export const usePortfolioStore = defineStore('portfolio', {
     hero: {
       name: '',
       title: '',
-      description: ''
+      description: '',
+      photo_url: ''
     },
     
     about: {
@@ -45,11 +46,14 @@ export const usePortfolioStore = defineStore('portfolio', {
     // ========== HERO ==========
     async fetchHero() {
       try {
+        console.log('🔄 Buscando dados do hero...')
         const response = await fetch('/api/portfolio/hero')
         const data = await response.json()
+        console.log('📥 Dados do hero recebidos:', data)
         this.hero = data
+        console.log('✅ Hero atualizado no store:', this.hero)
       } catch (error) {
-        console.error('Erro ao carregar hero:', error)
+        console.error('❌ Erro ao carregar hero:', error)
         this.error = error.message
       }
     },
@@ -103,6 +107,99 @@ export const usePortfolioStore = defineStore('portfolio', {
       } catch (error) {
         console.error('Erro ao atualizar about:', error)
         return false
+      }
+    },
+
+    async addAboutStat(stat) {
+      const authStore = useAuthStore()
+      try {
+        const response = await fetch('/api/portfolio/about/stats', {
+          method: 'POST',
+          headers: authStore.getAuthHeaders(),
+          body: JSON.stringify(stat)
+        })
+        
+        if (response.ok) {
+          const result = await response.json()
+          await this.fetchAbout()
+          return result.id
+        }
+        return false
+      } catch (error) {
+        console.error('Erro ao adicionar stat:', error)
+        return false
+      }
+    },
+
+    async updateAboutStat(id, stat) {
+      const authStore = useAuthStore()
+      try {
+        const response = await fetch(`/api/portfolio/about/stats/${id}`, {
+          method: 'PUT',
+          headers: authStore.getAuthHeaders(),
+          body: JSON.stringify(stat)
+        })
+        
+        if (response.ok) {
+          await this.fetchAbout()
+          return true
+        }
+        return false
+      } catch (error) {
+        console.error('Erro ao atualizar stat:', error)
+        return false
+      }
+    },
+
+    async deleteAboutStat(id) {
+      const authStore = useAuthStore()
+      try {
+        const response = await fetch(`/api/portfolio/about/stats/${id}`, {
+          method: 'DELETE',
+          headers: authStore.getAuthHeaders()
+        })
+        
+        if (response.ok) {
+          await this.fetchAbout()
+          return true
+        }
+        return false
+      } catch (error) {
+        console.error('Erro ao deletar stat:', error)
+        return false
+      }
+    },
+
+    async uploadHeroPhoto(file) {
+      const authStore = useAuthStore()
+      try {
+        const formData = new FormData()
+        formData.append('photo', file)
+        
+        console.log('📤 Enviando foto para upload...')
+        
+        const response = await fetch('/api/portfolio/hero/upload-photo', {
+          method: 'POST',
+          headers: {
+            'Authorization': `Bearer ${authStore.token}`
+          },
+          body: formData
+        })
+        
+        const data = await response.json()
+        console.log('📥 Resposta do upload:', data)
+        
+        if (response.ok && data.success) {
+          console.log('✅ Upload bem-sucedido:', data.photo_url)
+          await this.fetchHero()
+          console.log('📊 Hero atualizado:', this.hero)
+          return data.photo_url
+        }
+        console.error('❌ Upload falhou:', data)
+        return null
+      } catch (error) {
+        console.error('❌ Erro ao fazer upload da foto:', error)
+        return null
       }
     },
 

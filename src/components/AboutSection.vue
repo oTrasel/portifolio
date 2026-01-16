@@ -6,24 +6,21 @@
       <div class="about-content">
         <div class="about-text">
           <p class="about-intro">
-            Desenvolvedor Full Stack com experiência em Laravel, Vue.js, APIs REST e bancos de dados relacionais.
+            {{ portfolioStore.about.intro }}
           </p>
           
           <p class="about-description">
-            Atuo no desenvolvimento de aplicações web escaláveis, integrando back-end e front-end com foco em 
-            performance e qualidade. Possuo vivência com Docker, versionamento com Git e metodologias ágeis. 
-            Experiência em análise e suporte técnico, modelagem de dados e criação de relatórios em Power BI. 
-            Profissional proativo, com perfil voltado à resolução de problemas e aprimoramento contínuo das práticas de desenvolvimento.
+            {{ portfolioStore.about.description }}
           </p>
           
           <div class="about-info">
             <div class="info-item">
               <span class="info-label">Email:</span>
-              <span class="info-value">trasel.lucas02@gmail.com</span>
+              <span class="info-value">{{ portfolioStore.about.email }}</span>
             </div>
             <div class="info-item">
               <span class="info-label">Localização:</span>
-              <span class="info-value">Porto Alegre, RS</span>
+              <span class="info-value">{{ portfolioStore.about.location }}</span>
             </div>
             <div class="info-item">
               <span class="info-label">Status:</span>
@@ -38,28 +35,14 @@
         </div>
         
         <div class="about-stats">
-          <div class="stat-card">
-            <div class="stat-icon">💼</div>
-            <h3 class="stat-number">4+</h3>
-            <p class="stat-label">Anos de Experiência</p>
-          </div>
-          
-          <div class="stat-card">
-            <div class="stat-icon">🎓</div>
-            <h3 class="stat-number">2</h3>
-            <p class="stat-label">Formações Concluídas</p>
-          </div>
-          
-          <div class="stat-card">
-            <div class="stat-icon">⭐</div>
-            <h3 class="stat-number">5</h3>
-            <p class="stat-label">Empresas</p>
-          </div>
-          
-          <div class="stat-card">
-            <div class="stat-icon">🛠️</div>
-            <h3 class="stat-number">10+</h3>
-            <p class="stat-label">Tecnologias</p>
+          <div 
+            v-for="stat in portfolioStore.about.stats" 
+            :key="stat.id"
+            class="stat-card"
+          >
+            <div class="stat-icon">{{ stat.icon }}</div>
+            <h3 class="stat-number">{{ stat.number }}</h3>
+            <p class="stat-label">{{ stat.label }}</p>
           </div>
         </div>
       </div>
@@ -68,8 +51,17 @@
 </template>
 
 <script>
+import { usePortfolioStore } from '../stores/portfolio'
+
 export default {
-  name: 'AboutSection'
+  name: 'AboutSection',
+  setup() {
+    const portfolioStore = usePortfolioStore()
+    
+    return {
+      portfolioStore
+    }
+  }
 }
 </script>
 

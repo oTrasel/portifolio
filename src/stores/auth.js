@@ -26,12 +26,20 @@ export const useAuthStore = defineStore('auth', {
           this.token = data.token
           localStorage.setItem('authToken', data.token)
           localStorage.setItem('user', JSON.stringify(data.user))
-          return true
+          return { success: true }
         }
-        return false
+        
+        // Retornar mensagem de erro específica
+        return { 
+          success: false, 
+          error: data.error || 'Credenciais inválidas' 
+        }
       } catch (error) {
         console.error('Erro ao fazer login:', error)
-        return false
+        return { 
+          success: false, 
+          error: 'Erro ao conectar com o servidor' 
+        }
       }
     },
     

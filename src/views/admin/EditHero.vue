@@ -81,6 +81,45 @@
         <div class="edit-card">
           <form @submit.prevent="handleSave">
             <div class="form-group">
+              <label>Foto de Perfil</label>
+              <div class="photo-upload-container">
+                <div class="photo-preview">
+                  <div v-if="photoPreview || form.photo_url" class="preview-image">
+                    <img :src="photoPreview || form.photo_url" alt="Preview" />
+                  </div>
+                  <div v-else class="preview-placeholder">
+                    <span class="placeholder-icon">👤</span>
+                    <p>Nenhuma foto</p>
+                  </div>
+                </div>
+                <div class="photo-actions">
+                  <input
+                    type="file"
+                    ref="photoInput"
+                    accept="image/*"
+                    @change="handlePhotoSelect"
+                    style="display: none"
+                  />
+                  <button
+                    type="button"
+                    @click="$refs.photoInput.click()"
+                    class="btn btn-outline"
+                  >
+                    📷 Escolher Foto
+                  </button>
+                  <button
+                    v-if="photoPreview || form.photo_url"
+                    type="button"
+                    @click="removePhoto"
+                    class="btn btn-outline"
+                  >
+                    🗑️ Remover
+                  </button>
+                </div>
+              </div>
+            </div>
+          
+            <div class="form-group">
               <label for="name">Nome Completo</label>
               <input
                 type="text"
@@ -148,29 +187,93 @@ export default {
     const form = ref({
       name: '',
       title: '',
-      description: ''
+      description: '',
+      photo_url: ''
     })
     
+    const photoPreview = ref('')
+    const selectedPhotoFile = ref(null)
     const saved = ref(false)
     
     onMounted(() => {
-      form.value = { ...portfolioStore.hero }
+      form.value = {
+        name: portfolioStore.hero.name,
+        title: portfolioStore.hero.title,
+        description: portfolioStore.hero.description,
+        photo_url: portfolioStore.hero.photo_url
+      }
     })
     
+    const handlePhotoSelect = (event) => {
+      const file = event.target.files[0]
+      if (file) {
+        selectedPhotoFile.value = file
+        const reader = new FileReader()
+        reader.onload = (e) => {
+          photoPreview.value = e.target.result
+        }
+        reader.readAsDataURL(file)
+      }
+    }
+    
+    const removePhoto = () => {
+      photoPreview.value = ''
+      selectedPhotoFile.value = null
+      form.value.photo_url = ''
+    }
+    
     const handleSave = async () => {
-      const success = await portfolioStore.updateHero(form.value)
-      if (success) {
+      try {
+        // Upload da foto se houver arquivo selecionado
+        if (selectedPhotoFile.value) {
+          const photoUrl = await portfolioStore.uploadHeroPhoto(selectedPhotoFile.value)
+          if (!photoUrl) {
+            alert('Erro ao fazer upload da foto')
+            return
+          }
+          // A foto já foi salva no banco pelo endpoint de upload
+          form.value.photo_url = photoUrl
+          photoPreview.value = ''
+          selectedPhotoFile.value = null
+        }
+        
+        // Salvar outras informações do hero (name, title, description, photo_url)
+        const success = await portfolioStore.updateHero(form.value)
+        if (!success) {
+          alert('Erro ao salvar dados')
+          return
+        }
+        
+        // Recarregar dados do servidor para garantir sincronização
+        await portfolioStore.fetchHero()
+        form.value = {
+          name: portfolioStore.hero.name,
+          title: portfolioStore.hero.title,
+          description: portfolioStore.hero.description,
+          photo_url: portfolioStore.hero.photo_url
+        }
+        
+        console.log('✅ Dados salvos. Photo URL:', portfolioStore.hero.photo_url)
+        
         saved.value = true
         setTimeout(() => {
           saved.value = false
         }, 3000)
-      } else {
-        alert('Erro ao salvar dados')
+      } catch (error) {
+        console.error('Erro ao salvar:', error)
+        alert('Erro ao salvar alterações: ' + error.message)
       }
     }
     
     const handleReset = () => {
-      form.value = { ...portfolioStore.hero }
+      form.value = {
+        name: portfolioStore.hero.name,
+        title: portfolioStore.hero.title,
+        description: portfolioStore.hero.description,
+        photo_url: portfolioStore.hero.photo_url
+      }
+      photoPreview.value = ''
+      selectedPhotoFile.value = null
     }
     
     const handleLogout = () => {
@@ -181,6 +284,10 @@ export default {
     return {
       form,
       saved,
+      photoPreview,
+      selectedPhotoFile,
+      handlePhotoSelect,
+      removePhoto,
       handleSave,
       handleReset,
       handleLogout
