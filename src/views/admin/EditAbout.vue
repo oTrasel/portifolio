@@ -315,7 +315,6 @@ export default {
           saved.value = false
         }, 3000)
       } catch (error) {
-        console.error('Erro ao salvar:', error)
         alert('Erro ao salvar alterações')
       }
     }

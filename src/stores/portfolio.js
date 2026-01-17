@@ -36,6 +36,17 @@ export const usePortfolioStore = defineStore('portfolio', {
       email: ''
     },
 
+    colors: {
+      primary_color: '#6366f1',
+      secondary_color: '#8b5cf6',
+      accent_color: '#ec4899',
+      dark_bg: '#0f172a',
+      darker_bg: '#020617',
+      light_text: '#f1f5f9',
+      gray_text: '#94a3b8',
+      card_bg: '#1e293b'
+    },
+
     sectionVisibility: [],
 
     loading: false,
@@ -46,14 +57,10 @@ export const usePortfolioStore = defineStore('portfolio', {
     // ========== HERO ==========
     async fetchHero() {
       try {
-        console.log('🔄 Buscando dados do hero...')
         const response = await fetch('/api/portfolio/hero')
         const data = await response.json()
-        console.log('📥 Dados do hero recebidos:', data)
         this.hero = data
-        console.log('✅ Hero atualizado no store:', this.hero)
       } catch (error) {
-        console.error('❌ Erro ao carregar hero:', error)
         this.error = error.message
       }
     },
@@ -73,7 +80,6 @@ export const usePortfolioStore = defineStore('portfolio', {
         }
         return false
       } catch (error) {
-        console.error('Erro ao atualizar hero:', error)
         return false
       }
     },
@@ -85,7 +91,6 @@ export const usePortfolioStore = defineStore('portfolio', {
         const data = await response.json()
         this.about = data
       } catch (error) {
-        console.error('Erro ao carregar about:', error)
         this.error = error.message
       }
     },
@@ -105,7 +110,6 @@ export const usePortfolioStore = defineStore('portfolio', {
         }
         return false
       } catch (error) {
-        console.error('Erro ao atualizar about:', error)
         return false
       }
     },
@@ -126,7 +130,6 @@ export const usePortfolioStore = defineStore('portfolio', {
         }
         return false
       } catch (error) {
-        console.error('Erro ao adicionar stat:', error)
         return false
       }
     },
@@ -146,7 +149,6 @@ export const usePortfolioStore = defineStore('portfolio', {
         }
         return false
       } catch (error) {
-        console.error('Erro ao atualizar stat:', error)
         return false
       }
     },
@@ -165,7 +167,6 @@ export const usePortfolioStore = defineStore('portfolio', {
         }
         return false
       } catch (error) {
-        console.error('Erro ao deletar stat:', error)
         return false
       }
     },
@@ -176,8 +177,6 @@ export const usePortfolioStore = defineStore('portfolio', {
         const formData = new FormData()
         formData.append('photo', file)
         
-        console.log('📤 Enviando foto para upload...')
-        
         const response = await fetch('/api/portfolio/hero/upload-photo', {
           method: 'POST',
           headers: {
@@ -187,18 +186,13 @@ export const usePortfolioStore = defineStore('portfolio', {
         })
         
         const data = await response.json()
-        console.log('📥 Resposta do upload:', data)
         
         if (response.ok && data.success) {
-          console.log('✅ Upload bem-sucedido:', data.photo_url)
           await this.fetchHero()
-          console.log('📊 Hero atualizado:', this.hero)
           return data.photo_url
         }
-        console.error('❌ Upload falhou:', data)
         return null
       } catch (error) {
-        console.error('❌ Erro ao fazer upload da foto:', error)
         return null
       }
     },
@@ -210,7 +204,6 @@ export const usePortfolioStore = defineStore('portfolio', {
         const data = await response.json()
         this.experiences = data
       } catch (error) {
-        console.error('Erro ao carregar experiências:', error)
         this.error = error.message
       }
     },
@@ -230,7 +223,6 @@ export const usePortfolioStore = defineStore('portfolio', {
         }
         return false
       } catch (error) {
-        console.error('Erro ao adicionar experiência:', error)
         return false
       }
     },
@@ -250,7 +242,6 @@ export const usePortfolioStore = defineStore('portfolio', {
         }
         return false
       } catch (error) {
-        console.error('Erro ao atualizar experiência:', error)
         return false
       }
     },
@@ -269,7 +260,6 @@ export const usePortfolioStore = defineStore('portfolio', {
         }
         return false
       } catch (error) {
-        console.error('Erro ao deletar experiência:', error)
         return false
       }
     },
@@ -281,7 +271,6 @@ export const usePortfolioStore = defineStore('portfolio', {
         const data = await response.json()
         this.skillCategories = data
       } catch (error) {
-        console.error('Erro ao carregar skills:', error)
         this.error = error.message
       }
     },
@@ -301,7 +290,6 @@ export const usePortfolioStore = defineStore('portfolio', {
         }
         return false
       } catch (error) {
-        console.error('Erro ao atualizar categoria:', error)
         return false
       }
     },
@@ -321,7 +309,6 @@ export const usePortfolioStore = defineStore('portfolio', {
         }
         return false
       } catch (error) {
-        console.error('Erro ao adicionar categoria:', error)
         return false
       }
     },
@@ -340,7 +327,6 @@ export const usePortfolioStore = defineStore('portfolio', {
         }
         return false
       } catch (error) {
-        console.error('Erro ao deletar categoria:', error)
         return false
       }
     },
@@ -360,7 +346,6 @@ export const usePortfolioStore = defineStore('portfolio', {
         }
         return false
       } catch (error) {
-        console.error('Erro ao atualizar skill:', error)
         return false
       }
     },
@@ -380,7 +365,6 @@ export const usePortfolioStore = defineStore('portfolio', {
         }
         return false
       } catch (error) {
-        console.error('Erro ao adicionar skill:', error)
         return false
       }
     },
@@ -399,7 +383,6 @@ export const usePortfolioStore = defineStore('portfolio', {
         }
         return false
       } catch (error) {
-        console.error('Erro ao deletar skill:', error)
         return false
       }
     },
@@ -411,7 +394,6 @@ export const usePortfolioStore = defineStore('portfolio', {
         const data = await response.json()
         this.projects = data
       } catch (error) {
-        console.error('Erro ao carregar projetos:', error)
         this.error = error.message
       }
     },
@@ -431,7 +413,6 @@ export const usePortfolioStore = defineStore('portfolio', {
         }
         return false
       } catch (error) {
-        console.error('Erro ao adicionar projeto:', error)
         return false
       }
     },
@@ -451,7 +432,6 @@ export const usePortfolioStore = defineStore('portfolio', {
         }
         return false
       } catch (error) {
-        console.error('Erro ao atualizar projeto:', error)
         return false
       }
     },
@@ -470,7 +450,6 @@ export const usePortfolioStore = defineStore('portfolio', {
         }
         return false
       } catch (error) {
-        console.error('Erro ao deletar projeto:', error)
         return false
       }
     },
@@ -482,7 +461,6 @@ export const usePortfolioStore = defineStore('portfolio', {
         const data = await response.json()
         this.contact = data
       } catch (error) {
-        console.error('Erro ao carregar contato:', error)
         this.error = error.message
       }
     },
@@ -502,7 +480,6 @@ export const usePortfolioStore = defineStore('portfolio', {
         }
         return false
       } catch (error) {
-        console.error('Erro ao atualizar contato:', error)
         return false
       }
     },
@@ -514,7 +491,6 @@ export const usePortfolioStore = defineStore('portfolio', {
         const data = await response.json()
         this.footer = data
       } catch (error) {
-        console.error('Erro ao carregar footer:', error)
         this.error = error.message
       }
     },
@@ -534,7 +510,6 @@ export const usePortfolioStore = defineStore('portfolio', {
         }
         return false
       } catch (error) {
-        console.error('Erro ao atualizar footer:', error)
         return false
       }
     },
@@ -549,7 +524,7 @@ export const usePortfolioStore = defineStore('portfolio', {
         }
         return false
       } catch (error) {
-        console.error('Erro ao buscar visibilidade das seções:', error)
+
         return false
       }
     },
@@ -572,7 +547,6 @@ export const usePortfolioStore = defineStore('portfolio', {
         }
         return false
       } catch (error) {
-        console.error('Erro ao atualizar visibilidade:', error)
         return false
       }
     },
@@ -580,6 +554,38 @@ export const usePortfolioStore = defineStore('portfolio', {
     isSectionVisible(key) {
       const section = this.sectionVisibility.find(s => s.section_key === key)
       return section ? section.is_visible === 1 : true
+    },
+
+    // ========== CORES ==========
+    async fetchColors() {
+      try {
+        const response = await fetch('/api/portfolio/colors')
+        const data = await response.json()
+        if (data && Object.keys(data).length > 0) {
+          this.colors = data
+        }
+      } catch (error) {
+        this.error = error.message
+      }
+    },
+
+    async updateColors(data) {
+      const authStore = useAuthStore()
+      try {
+        const response = await fetch('/api/portfolio/colors', {
+          method: 'PUT',
+          headers: authStore.getAuthHeaders(),
+          body: JSON.stringify(data)
+        })
+        
+        if (response.ok) {
+          this.colors = { ...this.colors, ...data }
+          return true
+        }
+        return false
+      } catch (error) {
+        return false
+      }
     },
 
     // ========== INICIALIZAÇÃO ==========
@@ -594,10 +600,10 @@ export const usePortfolioStore = defineStore('portfolio', {
           this.fetchProjects(),
           this.fetchContact(),
           this.fetchFooter(),
-          this.fetchSectionVisibility()
+          this.fetchSectionVisibility(),
+          this.fetchColors()
         ])
       } catch (error) {
-        console.error('Erro ao inicializar dados:', error)
         this.error = error.message
       } finally {
         this.loading = false

@@ -11,6 +11,7 @@ import EditProjects from '../views/admin/EditProjects.vue'
 import EditContact from '../views/admin/EditContact.vue'
 import EditFooter from '../views/admin/EditFooter.vue'
 import EditVisibility from '../views/admin/EditVisibility.vue'
+import EditColors from '../views/admin/EditColors.vue'
 
 const routes = [
   {
@@ -75,6 +76,12 @@ const routes = [
     path: '/admin/visibility',
     name: 'EditVisibility',
     component: EditVisibility,
+    meta: { requiresAuth: true }
+  },
+  {
+    path: '/admin/colors',
+    name: 'EditColors',
+    component: EditColors,
     meta: { requiresAuth: true }
   }
 ]

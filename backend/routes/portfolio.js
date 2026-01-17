@@ -33,7 +33,7 @@ const upload = multer({
     const allowedTypes = /jpeg|jpg|png|gif|webp/;
     const extname = allowedTypes.test(path.extname(file.originalname).toLowerCase());
     const mimetype = allowedTypes.test(file.mimetype);
-    
+
     if (mimetype && extname) {
       return cb(null, true);
     } else {
@@ -63,11 +63,11 @@ router.get('/hero', (req, res) => {
 
 router.put('/hero', verifyToken, (req, res) => {
   const { name, title, description, photo_url } = req.body;
-  
+
   db.run(
     'INSERT OR REPLACE INTO hero (id, name, title, description, photo_url, updated_at) VALUES (1, ?, ?, ?, ?, CURRENT_TIMESTAMP)',
     [name, title, description, photo_url],
-    function(err) {
+    function (err) {
       if (err) return res.status(500).json({ error: err.message });
       res.json({ success: true, changes: this.changes });
     }
@@ -76,61 +76,52 @@ router.put('/hero', verifyToken, (req, res) => {
 
 // Rota de upload de foto do hero
 router.post('/hero/upload-photo', verifyToken, upload.single('photo'), (req, res) => {
-  console.log('📸 Requisição de upload recebida');
-  console.log('📦 Arquivo:', req.file);
-  
   try {
     if (!req.file) {
-      console.log('❌ Nenhum arquivo no request');
       return res.status(400).json({ error: 'Nenhum arquivo enviado' });
     }
 
     const photoUrl = `/uploads/${req.file.filename}`;
-    console.log('✅ Arquivo salvo:', photoUrl);
-    
+
     // Buscar foto antiga para deletar
     db.get('SELECT photo_url FROM hero WHERE id = 1', [], (err, row) => {
       if (!err && row && row.photo_url) {
         const oldPhotoPath = path.join(__dirname, '..', row.photo_url);
-        console.log('🗑️ Deletando foto antiga:', oldPhotoPath);
+
         if (fs.existsSync(oldPhotoPath)) {
           fs.unlinkSync(oldPhotoPath);
         }
       }
-      
+
       // Atualizar com a nova foto
       db.run(
         'UPDATE hero SET photo_url = ?, updated_at = CURRENT_TIMESTAMP WHERE id = 1',
         [photoUrl],
-        function(err) {
+        function (err) {
           if (err) {
-            console.error('❌ Erro ao atualizar banco:', err.message);
             return res.status(500).json({ error: err.message });
           }
-          
-          // Se não afetou nenhuma linha, inserir
+
           if (this.changes === 0) {
+            // Se não atualizou (não existe registro), inserir um novo
             db.run(
               'INSERT INTO hero (id, name, title, description, photo_url) VALUES (1, ?, ?, ?, ?)',
-              ['Seu Nome', 'Seu Título', 'Sua descrição', photoUrl],
-              function(err) {
+              ['', '', '', photoUrl],
+              function (err) {
                 if (err) {
-                  console.error('❌ Erro ao inserir no banco:', err.message);
                   return res.status(500).json({ error: err.message });
                 }
-                console.log('✅ Hero criado com photo_url:', photoUrl);
                 res.json({ success: true, photo_url: photoUrl });
               }
             );
           } else {
-            console.log('✅ Banco atualizado com photo_url:', photoUrl);
             res.json({ success: true, photo_url: photoUrl });
           }
         }
       );
     });
   } catch (error) {
-    console.error('❌ Erro no upload:', error);
+
     res.status(500).json({ error: error.message });
   }
 });
@@ -139,10 +130,10 @@ router.post('/hero/upload-photo', verifyToken, upload.single('photo'), (req, res
 router.get('/about', (req, res) => {
   db.get('SELECT * FROM about ORDER BY id DESC LIMIT 1', (err, about) => {
     if (err) return res.status(500).json({ error: err.message });
-    
+
     db.all('SELECT * FROM about_stats ORDER BY display_order', (err, stats) => {
       if (err) return res.status(500).json({ error: err.message });
-      
+
       res.json({
         ...about,
         stats: stats || []
@@ -153,11 +144,11 @@ router.get('/about', (req, res) => {
 
 router.put('/about', verifyToken, (req, res) => {
   const { intro, description, email, location } = req.body;
-  
+
   db.run(
     'INSERT OR REPLACE INTO about (id, intro, description, email, location, updated_at) VALUES (1, ?, ?, ?, ?, CURRENT_TIMESTAMP)',
     [intro, description, email, location],
-    function(err) {
+    function (err) {
       if (err) return res.status(500).json({ error: err.message });
       res.json({ success: true, changes: this.changes });
     }
@@ -167,17 +158,17 @@ router.put('/about', verifyToken, (req, res) => {
 // ========== ABOUT STATS ==========
 router.post('/about/stats', verifyToken, (req, res) => {
   const { icon, value, label } = req.body;
-  
+
   // Primeiro pegar o próximo display_order
   db.get('SELECT COALESCE(MAX(display_order), 0) + 1 as next_order FROM about_stats', [], (err, row) => {
     if (err) return res.status(500).json({ error: err.message });
-    
+
     const nextOrder = row.next_order;
-    
+
     db.run(
       'INSERT INTO about_stats (icon, number, label, display_order) VALUES (?, ?, ?, ?)',
       [icon, value, label, nextOrder],
-      function(err) {
+      function (err) {
         if (err) return res.status(500).json({ error: err.message });
         res.json({ success: true, id: this.lastID });
       }
@@ -187,11 +178,11 @@ router.post('/about/stats', verifyToken, (req, res) => {
 
 router.put('/about/stats/:id', verifyToken, (req, res) => {
   const { icon, value, label } = req.body;
-  
+
   db.run(
     'UPDATE about_stats SET icon = ?, number = ?, label = ? WHERE id = ?',
     [icon, value, label, req.params.id],
-    function(err) {
+    function (err) {
       if (err) return res.status(500).json({ error: err.message });
       res.json({ success: true, changes: this.changes });
     }
@@ -199,7 +190,7 @@ router.put('/about/stats/:id', verifyToken, (req, res) => {
 });
 
 router.delete('/about/stats/:id', verifyToken, (req, res) => {
-  db.run('DELETE FROM about_stats WHERE id = ?', [req.params.id], function(err) {
+  db.run('DELETE FROM about_stats WHERE id = ?', [req.params.id], function (err) {
     if (err) return res.status(500).json({ error: err.message });
     res.json({ success: true, changes: this.changes });
   });
@@ -209,12 +200,12 @@ router.delete('/about/stats/:id', verifyToken, (req, res) => {
 router.get('/experiences', (req, res) => {
   db.all('SELECT * FROM experiences ORDER BY display_order, id DESC', (err, rows) => {
     if (err) return res.status(500).json({ error: err.message });
-    
+
     const experiences = rows.map(exp => ({
       ...exp,
       technologies: exp.technologies.split(',')
     }));
-    
+
     res.json(experiences);
   });
 });
@@ -222,11 +213,11 @@ router.get('/experiences', (req, res) => {
 router.post('/experiences', verifyToken, (req, res) => {
   const { period, title, company, description, technologies } = req.body;
   const techString = Array.isArray(technologies) ? technologies.join(',') : technologies;
-  
+
   db.run(
     'INSERT INTO experiences (period, title, company, description, technologies) VALUES (?, ?, ?, ?, ?)',
     [period, title, company, description, techString],
-    function(err) {
+    function (err) {
       if (err) return res.status(500).json({ error: err.message });
       res.json({ success: true, id: this.lastID });
     }
@@ -236,11 +227,11 @@ router.post('/experiences', verifyToken, (req, res) => {
 router.put('/experiences/:id', verifyToken, (req, res) => {
   const { period, title, company, description, technologies } = req.body;
   const techString = Array.isArray(technologies) ? technologies.join(',') : technologies;
-  
+
   db.run(
     'UPDATE experiences SET period = ?, title = ?, company = ?, description = ?, technologies = ? WHERE id = ?',
     [period, title, company, description, techString, req.params.id],
-    function(err) {
+    function (err) {
       if (err) return res.status(500).json({ error: err.message });
       res.json({ success: true, changes: this.changes });
     }
@@ -248,7 +239,7 @@ router.put('/experiences/:id', verifyToken, (req, res) => {
 });
 
 router.delete('/experiences/:id', verifyToken, (req, res) => {
-  db.run('DELETE FROM experiences WHERE id = ?', [req.params.id], function(err) {
+  db.run('DELETE FROM experiences WHERE id = ?', [req.params.id], function (err) {
     if (err) return res.status(500).json({ error: err.message });
     res.json({ success: true, changes: this.changes });
   });
@@ -258,7 +249,7 @@ router.delete('/experiences/:id', verifyToken, (req, res) => {
 router.get('/skills', (req, res) => {
   db.all('SELECT * FROM skill_categories ORDER BY display_order', (err, categories) => {
     if (err) return res.status(500).json({ error: err.message });
-    
+
     const promises = categories.map(category => {
       return new Promise((resolve) => {
         db.all(
@@ -273,7 +264,7 @@ router.get('/skills', (req, res) => {
         );
       });
     });
-    
+
     Promise.all(promises).then(result => {
       res.json(result);
     });
@@ -283,17 +274,17 @@ router.get('/skills', (req, res) => {
 // Adicionar categoria de skill
 router.post('/skills/categories', verifyToken, (req, res) => {
   const { title, icon } = req.body;
-  
+
   // Primeiro pegar o próximo display_order
   db.get('SELECT COALESCE(MAX(display_order), 0) + 1 as next_order FROM skill_categories', [], (err, row) => {
     if (err) return res.status(500).json({ error: err.message });
-    
+
     const nextOrder = row.next_order;
-    
+
     db.run(
       'INSERT INTO skill_categories (title, icon, display_order) VALUES (?, ?, ?)',
       [title, icon, nextOrder],
-      function(err) {
+      function (err) {
         if (err) return res.status(500).json({ error: err.message });
         res.json({ success: true, id: this.lastID });
       }
@@ -304,11 +295,11 @@ router.post('/skills/categories', verifyToken, (req, res) => {
 // Atualizar categoria de skill
 router.put('/skills/categories/:id', verifyToken, (req, res) => {
   const { title, icon } = req.body;
-  
+
   db.run(
     'UPDATE skill_categories SET title = ?, icon = ? WHERE id = ?',
     [title, icon, req.params.id],
-    function(err) {
+    function (err) {
       if (err) return res.status(500).json({ error: err.message });
       res.json({ success: true, changes: this.changes });
     }
@@ -320,9 +311,9 @@ router.delete('/skills/categories/:id', verifyToken, (req, res) => {
   // Primeiro deletar todas as skills da categoria
   db.run('DELETE FROM skills WHERE category_id = ?', [req.params.id], (err) => {
     if (err) return res.status(500).json({ error: err.message });
-    
+
     // Depois deletar a categoria
-    db.run('DELETE FROM skill_categories WHERE id = ?', [req.params.id], function(err) {
+    db.run('DELETE FROM skill_categories WHERE id = ?', [req.params.id], function (err) {
       if (err) return res.status(500).json({ error: err.message });
       res.json({ success: true, changes: this.changes });
     });
@@ -332,11 +323,11 @@ router.delete('/skills/categories/:id', verifyToken, (req, res) => {
 // Atualizar skill individual
 router.put('/skills/:id', verifyToken, (req, res) => {
   const { name, level } = req.body;
-  
+
   db.run(
     'UPDATE skills SET name = ?, level = ? WHERE id = ?',
     [name, level, req.params.id],
-    function(err) {
+    function (err) {
       if (err) return res.status(500).json({ error: err.message });
       res.json({ success: true, changes: this.changes });
     }
@@ -346,11 +337,11 @@ router.put('/skills/:id', verifyToken, (req, res) => {
 // Adicionar skill individual
 router.post('/skills', verifyToken, (req, res) => {
   const { category_id, name, level } = req.body;
-  
+
   db.run(
     'INSERT INTO skills (category_id, name, level) VALUES (?, ?, ?)',
     [category_id, name, level],
-    function(err) {
+    function (err) {
       if (err) return res.status(500).json({ error: err.message });
       res.json({ success: true, id: this.lastID });
     }
@@ -359,7 +350,7 @@ router.post('/skills', verifyToken, (req, res) => {
 
 // Deletar skill individual
 router.delete('/skills/:id', verifyToken, (req, res) => {
-  db.run('DELETE FROM skills WHERE id = ?', [req.params.id], function(err) {
+  db.run('DELETE FROM skills WHERE id = ?', [req.params.id], function (err) {
     if (err) return res.status(500).json({ error: err.message });
     res.json({ success: true, changes: this.changes });
   });
@@ -369,12 +360,12 @@ router.delete('/skills/:id', verifyToken, (req, res) => {
 router.get('/projects', (req, res) => {
   db.all('SELECT * FROM projects ORDER BY display_order, id DESC', (err, rows) => {
     if (err) return res.status(500).json({ error: err.message });
-    
+
     const projects = rows.map(proj => ({
       ...proj,
       technologies: proj.technologies.split(',')
     }));
-    
+
     res.json(projects);
   });
 });
@@ -382,11 +373,11 @@ router.get('/projects', (req, res) => {
 router.post('/projects', verifyToken, (req, res) => {
   const { title, description, technologies, demo, github, icon } = req.body;
   const techString = Array.isArray(technologies) ? technologies.join(',') : technologies;
-  
+
   db.run(
     'INSERT INTO projects (title, description, technologies, demo, github, icon) VALUES (?, ?, ?, ?, ?, ?)',
     [title, description, techString, demo, github, icon],
-    function(err) {
+    function (err) {
       if (err) return res.status(500).json({ error: err.message });
       res.json({ success: true, id: this.lastID });
     }
@@ -396,11 +387,11 @@ router.post('/projects', verifyToken, (req, res) => {
 router.put('/projects/:id', verifyToken, (req, res) => {
   const { title, description, technologies, demo, github, icon } = req.body;
   const techString = Array.isArray(technologies) ? technologies.join(',') : technologies;
-  
+
   db.run(
     'UPDATE projects SET title = ?, description = ?, technologies = ?, demo = ?, github = ?, icon = ? WHERE id = ?',
     [title, description, techString, demo, github, icon, req.params.id],
-    function(err) {
+    function (err) {
       if (err) return res.status(500).json({ error: err.message });
       res.json({ success: true, changes: this.changes });
     }
@@ -408,7 +399,7 @@ router.put('/projects/:id', verifyToken, (req, res) => {
 });
 
 router.delete('/projects/:id', verifyToken, (req, res) => {
-  db.run('DELETE FROM projects WHERE id = ?', [req.params.id], function(err) {
+  db.run('DELETE FROM projects WHERE id = ?', [req.params.id], function (err) {
     if (err) return res.status(500).json({ error: err.message });
     res.json({ success: true, changes: this.changes });
   });
@@ -424,11 +415,11 @@ router.get('/contact', (req, res) => {
 
 router.put('/contact', verifyToken, (req, res) => {
   const { email, github, linkedin, location } = req.body;
-  
+
   db.run(
     'UPDATE contact SET email = ?, github = ?, linkedin = ?, location = ?, updated_at = CURRENT_TIMESTAMP WHERE id = 1',
     [email, github, linkedin, location],
-    function(err) {
+    function (err) {
       if (err) return res.status(500).json({ error: err.message });
       res.json({ success: true, changes: this.changes });
     }
@@ -445,16 +436,16 @@ router.get('/footer', (req, res) => {
 
 router.put('/footer', verifyToken, (req, res) => {
   const { description, github, linkedin, email } = req.body;
-  
+
   db.get('SELECT * FROM footer LIMIT 1', (err, row) => {
     if (err) return res.status(500).json({ error: err.message });
-    
+
     if (row) {
       // Atualizar
       db.run(
         'UPDATE footer SET description = ?, github = ?, linkedin = ?, email = ?, updated_at = CURRENT_TIMESTAMP WHERE id = 1',
         [description, github, linkedin, email],
-        function(err) {
+        function (err) {
           if (err) return res.status(500).json({ error: err.message });
           res.json({ success: true, changes: this.changes });
         }
@@ -464,7 +455,7 @@ router.put('/footer', verifyToken, (req, res) => {
       db.run(
         'INSERT INTO footer (description, github, linkedin, email) VALUES (?, ?, ?, ?)',
         [description, github, linkedin, email],
-        function(err) {
+        function (err) {
           if (err) return res.status(500).json({ error: err.message });
           res.json({ success: true, id: this.lastID });
         }
@@ -484,15 +475,73 @@ router.get('/settings/visibility', (req, res) => {
 router.put('/settings/visibility/:key', verifyToken, (req, res) => {
   const { key } = req.params;
   const { is_visible } = req.body;
-  
+
   db.run(
     'UPDATE section_visibility SET is_visible = ?, updated_at = CURRENT_TIMESTAMP WHERE section_key = ?',
     [is_visible ? 1 : 0, key],
-    function(err) {
+    function (err) {
       if (err) return res.status(500).json({ error: err.message });
       res.json({ success: true, changes: this.changes });
     }
   );
+});
+
+// Colors Routes
+router.get('/colors', (req, res) => {
+  db.get('SELECT * FROM colors WHERE id = 1', [], (err, row) => {
+    if (err) return res.status(500).json({ error: err.message });
+    res.json(row || {});
+  });
+});
+
+router.put('/colors', verifyToken, (req, res) => {
+  const {
+    primary_color,
+    secondary_color,
+    accent_color,
+    dark_bg,
+    darker_bg,
+    light_text,
+    gray_text,
+    card_bg
+  } = req.body;
+
+  db.get('SELECT * FROM colors WHERE id = 1', [], (err, row) => {
+    if (err) return res.status(500).json({ error: err.message });
+
+    if (row) {
+      // Atualizar
+      db.run(
+        `UPDATE colors SET 
+          primary_color = ?, 
+          secondary_color = ?, 
+          accent_color = ?, 
+          dark_bg = ?, 
+          darker_bg = ?, 
+          light_text = ?, 
+          gray_text = ?, 
+          card_bg = ?,
+          updated_at = CURRENT_TIMESTAMP 
+         WHERE id = 1`,
+        [primary_color, secondary_color, accent_color, dark_bg, darker_bg, light_text, gray_text, card_bg],
+        function (err) {
+          if (err) return res.status(500).json({ error: err.message });
+          res.json({ success: true, changes: this.changes });
+        }
+      );
+    } else {
+      // Criar
+      db.run(
+        `INSERT INTO colors (primary_color, secondary_color, accent_color, dark_bg, darker_bg, light_text, gray_text, card_bg) 
+         VALUES (?, ?, ?, ?, ?, ?, ?, ?)`,
+        [primary_color, secondary_color, accent_color, dark_bg, darker_bg, light_text, gray_text, card_bg],
+        function (err) {
+          if (err) return res.status(500).json({ error: err.message });
+          res.json({ success: true, id: this.lastID });
+        }
+      );
+    }
+  });
 });
 
 module.exports = router;

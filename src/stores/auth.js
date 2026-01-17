@@ -35,7 +35,6 @@ export const useAuthStore = defineStore('auth', {
           error: data.error || 'Credenciais inválidas' 
         }
       } catch (error) {
-        console.error('Erro ao fazer login:', error)
         return { 
           success: false, 
           error: 'Erro ao conectar com o servidor' 

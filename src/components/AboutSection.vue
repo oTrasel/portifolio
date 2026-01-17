@@ -131,7 +131,7 @@ export default {
 .status-indicator {
   width: 8px;
   height: 8px;
-  background: #10b981;
+  background: var(--primary-color);
   border-radius: 50%;
   display: inline-block;
   animation: pulse 2s infinite;

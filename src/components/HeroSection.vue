@@ -52,15 +52,8 @@ export default {
     const portfolioStore = usePortfolioStore()
     const hero = computed(() => portfolioStore.hero)
     
-    // Log para debug
-    watch(() => portfolioStore.hero.photo_url, (newValue) => {
-      console.log('🖼️ Hero photo_url atualizado:', newValue)
-      console.log('🖼️ URL completa da imagem:', window.location.origin + newValue)
-    }, { immediate: true })
-    
-    const handleImageError = (e) => {
-      console.error('❌ Erro ao carregar imagem:', e.target.src)
-      console.error('❌ Caminho esperado:', portfolioStore.hero.photo_url)
+    const handleImageError = () => {
+      // Silently handle image load errors
     }
     
     return {
@@ -150,7 +143,7 @@ export default {
 .hero-name {
   font-size: 3.5rem;
   font-weight: 800;
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 50%, #f093fb 100%);
+  background: linear-gradient(135deg, var(--primary-color) 0%, var(--secondary-color) 50%, var(--accent-color) 100%);
   background-size: 200% 200%;
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;

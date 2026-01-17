@@ -46,11 +46,8 @@ app.get('/api/health', (req, res) => {
 
 // Inicializar banco de dados e servidor
 initializeDatabase().then(() => {
-  app.listen(PORT, () => {
-    console.log(`🚀 Servidor rodando em http://localhost:${PORT}`);
-    console.log(`📊 API disponível em http://localhost:${PORT}/api`);
-  });
+  app.listen(PORT);
 }).catch(err => {
-  console.error('❌ Erro ao inicializar banco de dados:', err);
+  console.error('Erro ao inicializar banco de dados:', err);
   process.exit(1);
 });

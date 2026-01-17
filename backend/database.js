@@ -6,9 +6,7 @@ require('dotenv').config();
 const dbPath = path.resolve(__dirname, 'portfolio.db');
 const db = new sqlite3.Database(dbPath, (err) => {
   if (err) {
-    console.error('❌ Erro ao conectar com o banco de dados:', err.message);
-  } else {
-    console.log('✅ Conectado ao banco de dados SQLite');
+    throw new Error(`Erro ao conectar com o banco de dados: ${err.message}`);
   }
 });
 
@@ -144,6 +142,22 @@ function initializeDatabase() {
       email TEXT,
       updated_at DATETIME DEFAULT CURRENT_TIMESTAMP
     )
+  `);
+
+  // Tabela de Cores do Site
+  db.run(`
+    CREATE TABLE IF NOT EXISTS colors (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      primary_color TEXT DEFAULT '#6366f1',
+      secondary_color TEXT DEFAULT '#8b5cf6',
+      accent_color TEXT DEFAULT '#ec4899',
+      dark_bg TEXT DEFAULT '#0f172a',
+      darker_bg TEXT DEFAULT '#020617',
+      light_text TEXT DEFAULT '#f1f5f9',
+      gray_text TEXT DEFAULT '#94a3b8',
+      card_bg TEXT DEFAULT '#1e293b',
+      updated_at DATETIME DEFAULT CURRENT_TIMESTAMP
+    )
   `, (err) => {
     if (err) reject(err);
     else {
@@ -166,11 +180,7 @@ async function insertInitialData() {
       const hashedPassword = await bcrypt.hash(adminPassword, 10);
       db.run(
         'INSERT INTO users (username, password) VALUES (?, ?)',
-        [adminUsername, hashedPassword],
-        (err) => {
-          if (err) console.error('❌ Erro ao criar usuário admin:', err);
-          else console.log(`✅ Usuário admin criado (username: ${adminUsername})`);
-        }
+        [adminUsername, hashedPassword]
       );
     }
   });
@@ -192,6 +202,17 @@ async function insertInitialData() {
           [section.key, section.name, section.visible]
         );
       });
+    }
+  });
+
+  // Inserir cores padrão se não existir
+  db.get('SELECT * FROM colors LIMIT 1', (err, row) => {
+    if (!row) {
+      db.run(
+        `INSERT INTO colors (primary_color, secondary_color, accent_color, dark_bg, darker_bg, light_text, gray_text, card_bg) 
+         VALUES (?, ?, ?, ?, ?, ?, ?, ?)`,
+        ['#6366f1', '#8b5cf6', '#ec4899', '#0f172a', '#020617', '#f1f5f9', '#94a3b8', '#1e293b']
+      );
     }
   });
   

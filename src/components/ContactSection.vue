@@ -94,8 +94,6 @@ export default {
   },
   methods: {
     handleSubmit() {
-      // Aqui você pode adicionar a lógica para enviar o formulário
-      console.log('Formulário enviado:', this.form);
       alert('Mensagem enviada com sucesso! Entrarei em contato em breve.');
       this.form = { name: '', email: '', subject: '', message: '' };
     }

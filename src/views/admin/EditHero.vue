@@ -253,14 +253,11 @@ export default {
           photo_url: portfolioStore.hero.photo_url
         }
         
-        console.log('✅ Dados salvos. Photo URL:', portfolioStore.hero.photo_url)
-        
         saved.value = true
         setTimeout(() => {
           saved.value = false
         }, 3000)
       } catch (error) {
-        console.error('Erro ao salvar:', error)
         alert('Erro ao salvar alterações: ' + error.message)
       }
     }

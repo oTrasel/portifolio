@@ -62,6 +62,12 @@
           </li>
           <li class="menu-divider"></li>
           <li>
+            <router-link to="/admin/colors" class="menu-item">
+              <span class="menu-icon">🎨</span>
+              Cores do Site
+            </router-link>
+          </li>
+          <li>
             <router-link to="/admin/visibility" class="menu-item">
               <span class="menu-icon">⚙️</span>
               Visibilidade

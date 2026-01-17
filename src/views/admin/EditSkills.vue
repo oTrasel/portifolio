@@ -478,7 +478,7 @@ export default {
 
 .skill-level-fill {
   height: 100%;
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  background: linear-gradient(135deg, var(--primary-color) 0%, var(--secondary-color) 100%);
   transition: width 0.3s ease;
 }
 
@@ -518,15 +518,15 @@ export default {
   border-radius: 8px;
   padding: 16px;
   cursor: pointer;
-  color: #667eea;
+  color: var(--primary-color);
   font-weight: 500;
   transition: all 0.2s;
   width: 100%;
 }
 
 .add-skill-btn:hover {
-  border-color: #667eea;
-  background: #f8f9ff;
+  border-color: var(--primary-color);
+  background: rgba(var(--primary-color-rgb), 0.05);
 }
 
 .modal-small {
@@ -550,13 +550,13 @@ export default {
 
 .level-fill {
   height: 100%;
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  background: linear-gradient(135deg, var(--primary-color) 0%, var(--secondary-color) 100%);
   transition: width 0.3s ease;
 }
 
 .level-preview span {
   font-weight: 600;
-  color: #667eea;
+  color: var(--primary-color);
   min-width: 45px;
 }
 

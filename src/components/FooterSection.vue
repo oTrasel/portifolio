@@ -196,7 +196,7 @@ export default {
 }
 
 .heart {
-  color: #ff6b6b;
+  color: var(--accent-color);
   animation: heartbeat 1.5s ease-in-out infinite;
 }
 
